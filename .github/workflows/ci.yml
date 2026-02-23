@@ -3,11 +3,11 @@ on:
   push:
     branches:
       - main
-      - "release/**"
+      - release/**
   pull_request:
     branches:
       - main
-      - "release/**"
+      - release/**
 
 permissions: # added using https://github.com/step-security/secure-workflows
   contents: read
@@ -26,7 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-20.04, actuated-arm64-4cpu-16gb, macos-12, windows-2019]
+        os: [ubuntu-24.04, actuated-arm64-4cpu-16gb, macos-14, windows-2022]
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
   project:
     name: Project Checks
     if: github.repository == 'containerd/containerd'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
 
     steps:
@@ -70,7 +70,7 @@ jobs:
   #
   protos:
     name: Protobuf
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
 
     defaults:
@@ -104,7 +104,7 @@ jobs:
 
   man:
     name: Manpages
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
 
     steps:
@@ -118,7 +118,7 @@ jobs:
   crossbuild:
     name: Crossbuild Binaries
     needs: [project, linters, protos, man]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -126,17 +126,17 @@ jobs:
         include:
           - goos: linux
             goarch: arm
-            goarm: "7"
+            goarm: '7'
           - goos: linux
             goarch: arm
-            goarm: "5"
+            goarm: '5'
           - goos: freebsd
             goarch: amd64
           - goos: freebsd
             goarch: arm64
           - goos: windows
             goarch: arm
-            goarm: "7"
+            goarm: '7'
 
     steps:
       - uses: actions/checkout@v4
@@ -190,8 +190,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-20.04, actuated-arm64-4cpu-16gb, macos-12, windows-2019, windows-2022]
-        go-version: ["1.21.11", "1.22.4"]
+        os: [ubuntu-24.04, actuated-arm64-4cpu-16gb, macos-14, windows-2022, windows-2022]
+        go-version: [1.21.11, 1.22.4]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-go
@@ -216,8 +216,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019, windows-2022]
-        enable_cri_sandboxes: ["", "sandboxed"]
+        os: [windows-2022, windows-2022]
+        enable_cri_sandboxes: ['', sandboxed]
 
     defaults:
       run:
@@ -248,12 +248,12 @@ jobs:
 
       # needs to be a separate step since terminal reload is required to bring in new env variables and PATH
       - name: Upgrade Chocolaty on Windows 2019
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         shell: powershell
         run: .\script\setup\upgrade_chocolaty_windows_2019.ps1
 
       - name: Upgrade MinGW on Windows 2019
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         shell: powershell
         run: .\script\setup\upgrade_mingw_windows_2019.ps1
 
@@ -274,9 +274,9 @@ jobs:
       - env:
           TEST_IMAGE_LIST: ${{github.workspace}}/repolist.toml
           CRI_TEST_IMAGES: ${{github.workspace}}/cri-test-images.yaml
-          BUSYBOX_TESTING_IMAGE_REF: "registry.k8s.io/e2e-test-images/busybox:1.29-2"
-          RESOURCE_CONSUMER_TESTING_IMAGE_REF: "registry.k8s.io/e2e-test-images/resource-consumer:1.10"
-          WEBSERVER_TESTING_IMAGE_REF: "registry.k8s.io/e2e-test-images/nginx:1.14-2"
+          BUSYBOX_TESTING_IMAGE_REF: registry.k8s.io/e2e-test-images/busybox:1.29-2
+          RESOURCE_CONSUMER_TESTING_IMAGE_REF: registry.k8s.io/e2e-test-images/resource-consumer:1.10
+          WEBSERVER_TESTING_IMAGE_REF: registry.k8s.io/e2e-test-images/nginx:1.14-2
         run: |
           cat > "${{ env.TEST_IMAGE_LIST }}" << EOF
           busybox = "${{ env.BUSYBOX_TESTING_IMAGE_REF }}"
@@ -317,7 +317,7 @@ jobs:
           ENABLE_CRI_SANDBOXES: ${{ matrix.enable_cri_sandboxes }}
           GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-serial-junit.xml
           GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-serial-gotest.json
-          EXTRA_TESTFLAGS: "-timeout=20m"
+          EXTRA_TESTFLAGS: -timeout=20m
         run: mingw32-make.exe integration
       - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
@@ -330,7 +330,7 @@ jobs:
       - name: Integration 2
         env:
           TESTFLAGS_PARALLEL: 1
-          EXTRA_TESTFLAGS: "-short"
+          EXTRA_TESTFLAGS: -short
           CGO_ENABLED: 1
           ENABLE_CRI_SANDBOXES: ${{ matrix.enable_cri_sandboxes }}
           GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-parallel-junit.xml
@@ -390,8 +390,8 @@ jobs:
           - io.containerd.runc.v1
           - io.containerd.runc.v2
         runc: [runc, crun]
-        enable_cri_sandboxes: ["", "sandboxed"]
-        os: [ubuntu-20.04, actuated-arm64-4cpu-16gb]
+        enable_cri_sandboxes: ['', sandboxed]
+        os: [ubuntu-24.04, actuated-arm64-4cpu-16gb]
         exclude:
           - runtime: io.containerd.runc.v1
             runc: crun
@@ -530,7 +530,7 @@ jobs:
 
   tests-mac-os:
     name: MacOS unit tests
-    runs-on: macos-12
+    runs-on: macos-14
     timeout-minutes: 10
     needs: [project, linters, protos, man]
     env:
@@ -543,8 +543,8 @@ jobs:
       - run: script/setup/install-teststat
       - name: Tests
         env:
-          GOTESTSUM_JUNITFILE: "${{ github.workspace }}/macos-test-junit.xml"
-          GOTESTSUM_JSONFILE: "${{ github.workspace }}/macos-test-gotest.json"
+          GOTESTSUM_JUNITFILE: ${{ github.workspace }}/macos-test-junit.xml
+          GOTESTSUM_JSONFILE: ${{ github.workspace }}/macos-test-gotest.json
         run: make test
       - run: if [ -f *-gotest.json ]; then echo '# Unit Tests' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
